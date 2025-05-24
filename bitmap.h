@@ -42,6 +42,15 @@ struct	bitmap
 };
 #pragma pack(pop)
 
+#pragma pack(push, 1)
+struct	rgba
+{
+	int8_t	blue;
+	int8_t	green;
+	int8_t	red;
+	//int8_t	reserved;
+};
+#pragma pack(pop)
 
 /* Constants definitions */
 
@@ -51,6 +60,7 @@ constexpr int16_t	BM_SIGNATURE = 0x4d42;
 /* Functions definitions */
 
 bool	is_file_bitmap(bitmap &img, const std::string &file);
+int		read_data(std::ifstream &file, rgba **data, bitmap &img);
 void	print_header(bitmap &bmp);
 
 #endif

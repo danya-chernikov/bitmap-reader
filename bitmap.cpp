@@ -1,26 +1,44 @@
 #include "bitmap.h"
 
+#include <fstream>
 #include <filesystem>
 
 /* Performs minimal checking to ensure that the bitmap file structure is correct */
-bool	is_file_bitmap(bitmap &img, const std::string &file)
+bool is_file_bitmap(bitmap &img, const std::string &file)
 {
 	const std::filesystem::path	path = file;
 
-	std::cout << "file size is: " << std::hex << std::filesystem::file_size(path) << std::endl;
 	// The file size in the header does not match the actual file size
 	if (static_cast<uintmax_t>(img.file_header.file_size) != std::filesystem::file_size(path))
 		return false;
 
 	// The bitmap signature in the header is incorrect
-	std::cout << "The signature is: " << std::hex << img.file_header.signature << std::endl;
 	if (img.file_header.signature != BM_SIGNATURE)
 		return false;
 
 	return true;
 }
 
-void	print_header(bitmap &bmp)
+int read_data(std::ifstream &file, rgba **data, bitmap &img)
+{	
+	int8_t	width = img.info_header.width;
+	int8_t	height = img.info_header.height;
+	int32_t	data_offset = img.file_header.data_offset;
+
+	/* Let's read file data raw by raw */
+	file.seekg(data_offset);
+	for (int8_t i = 0; i < height; ++i)
+	{
+		for (int8_t q = 0; q < width && !file.eof(); ++q)
+		{
+			file.read(reinterpret_cast<char *>(&data[i][q]), sizeof (rgba));
+		}
+	}
+
+	return 1;
+}
+
+void print_header(bitmap &bmp)
 {
 	std::cout << std::endl;
 

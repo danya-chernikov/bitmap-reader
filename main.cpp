@@ -1,6 +1,6 @@
 #include <iostream>
-#include <fstream>
 #include <string>
+#include <fstream>
 
 #include <cstdlib>
 
@@ -10,7 +10,7 @@ int main()
 {
 	std::string	src_img_path;
 	std::cout << "Enter input BMP file path: ";
-	std::cin >> src_img_path;
+	std::getline(std::cin, src_img_path);
 
 	std::ifstream src_file(src_img_path, std::ios::in | std::ios::binary);
 	if (!src_file.is_open() || src_file.fail())
@@ -35,6 +35,37 @@ int main()
 	}
 
 	print_header(image);
+
+	int8_t	width = image.info_header.width;
+	int8_t	height = image.info_header.height;
+
+	rgba **data = new rgba*[height];
+	for (int8_t i = 0; i < height; ++i)
+		data[i] = new rgba[width];
+
+	if (!read_data(src_file, data, image))
+	{
+		std::cerr << "Unable to read from the source image file\n";
+		exit(2);
+	}
+
+	std::cout << std::endl;
+	for (int8_t i = height - 1; i >= 0; --i)
+	{
+		for (int8_t q = 0; q < width; ++q)
+		{
+			if (!data[i][q].blue && !data[i][q].green && !data[i][q].red)
+				std::cout << "\033[32m" << 'x' <<"\033[0m";
+			else
+				std::cout << 'o';
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+
+	for (int8_t i = 0; i < height; ++i)
+		delete [] data [i];
+	delete [] data;
 	
 	src_file.close();
 
