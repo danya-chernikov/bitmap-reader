@@ -36,11 +36,11 @@ int main()
 
 	print_header(image);
 
-	int8_t	width = image.info_header.width;
-	int8_t	height = image.info_header.height;
+	int32_t	width = image.info_header.width;
+	int32_t	height = image.info_header.height;
 
 	rgba **data = new rgba*[height];
-	for (int8_t i = 0; i < height; ++i)
+	for (int32_t i = 0; i < height; ++i)
 		data[i] = new rgba[width];
 
 	if (!read_data(src_file, data, image))
@@ -50,9 +50,9 @@ int main()
 	}
 
 	std::cout << std::endl;
-	for (int8_t i = height - 1; i >= 0; --i)
+	for (int32_t i = height - 1; i >= 0; --i)
 	{
-		for (int8_t q = 0; q < width; ++q)
+		for (int32_t q = 0; q < width; ++q)
 		{
 			if (!data[i][q].blue && !data[i][q].green && !data[i][q].red)
 				std::cout << "\033[32m" << 'x' <<"\033[0m";
@@ -63,7 +63,7 @@ int main()
 	}
 	std::cout << std::endl;
 
-	for (int8_t i = 0; i < height; ++i)
+	for (int32_t i = 0; i < height; ++i)
 		delete [] data [i];
 	delete [] data;
 	

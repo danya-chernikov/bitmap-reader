@@ -1,6 +1,7 @@
 #include "bitmap.h"
 
 #include <fstream>
+#include <sstream>
 #include <filesystem>
 
 /* Performs minimal checking to ensure that the bitmap file structure is correct */
@@ -21,19 +22,28 @@ bool is_file_bitmap(bitmap &img, const std::string &file)
 
 int read_data(std::ifstream &file, rgba **data, bitmap &img)
 {	
-	int8_t	width = img.info_header.width;
-	int8_t	height = img.info_header.height;
+	int32_t	width = img.info_header.width;
+	int32_t	height = img.info_header.height;
 	int32_t	data_offset = img.file_header.data_offset;
+	int32_t	bytes_read = 0;
+
+	/*if (width % 4 != 0)
+	{
+
+	}*/
 
 	/* Let's read file data raw by raw */
 	file.seekg(data_offset);
-	for (int8_t i = 0; i < height; ++i)
+	for (int32_t i = 0; i < height; ++i)
 	{
-		for (int8_t q = 0; q < width && !file.eof(); ++q)
+		for (int32_t q = 0; q < width && !file.eof(); ++q)
 		{
 			file.read(reinterpret_cast<char *>(&data[i][q]), sizeof (rgba));
+			bytes_read += file.gcount();
 		}
 	}
+
+	std::cout << "Bytes read: "
 
 	return 1;
 }
