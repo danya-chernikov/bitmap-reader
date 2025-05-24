@@ -43,7 +43,13 @@ int main()
 	for (int32_t i = 0; i < height; ++i)
 		data[i] = new rgba[width];
 
-	if (!read_data(src_file, data, image))
+	int	res = read_data(src_file, data, image);
+	if (res == 1)
+	{
+		std::cout << "A bitmaps of this bit depth are not supported\n";
+		exit(3);
+	}
+	else if (res == 2)
 	{
 		std::cerr << "Unable to read from the source image file\n";
 		exit(2);

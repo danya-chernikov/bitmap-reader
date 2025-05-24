@@ -48,7 +48,7 @@ struct	rgba
 	int8_t	blue;
 	int8_t	green;
 	int8_t	red;
-	//int8_t	reserved;
+	int8_t	reserved;
 };
 #pragma pack(pop)
 
