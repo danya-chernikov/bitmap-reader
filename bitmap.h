@@ -5,9 +5,8 @@
 #include <cstdint>
 
 /* Structures definitions */
-
 #pragma pack(push, 1)
-struct	bitmap_file_header
+struct	file_header
 {
 	int16_t	signature; // Always 'BM'
 	int32_t	file_size; // The whole file size
@@ -18,7 +17,7 @@ struct	bitmap_file_header
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-struct	bitmap_info_header
+struct	info_header
 {
 	int32_t	size; // Size of info header (Is it always 40?)
 	int32_t	width;
@@ -35,10 +34,10 @@ struct	bitmap_info_header
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-struct	bitmap
+struct	bitmap_header
 {
-	bitmap_file_header	file_header;
-	bitmap_info_header	info_header;
+	file_header	file;
+	info_header	info;
 };
 #pragma pack(pop)
 
@@ -52,15 +51,42 @@ struct	rgba
 };
 #pragma pack(pop)
 
+enum class pixel_color
+{
+	BLACK, WHITE
+};
+
+
 /* Constants definitions */
-
 constexpr int16_t	BM_SIGNATURE = 0x4d42;
+constexpr int32_t	MAX_WIDTH = 1000;
+constexpr int32_t	MAX_HEIGHT = 1000;
 
 
-/* Functions definitions */
+/* Bitmap class */
+class Bitmap
+{
+public:
+	Bitmap();
+	~Bitmap();
 
-bool	is_file_bitmap(bitmap &img, const std::string &file);
-int		read_data(std::ifstream &file, rgba **data, bitmap &img);
-void	print_header(bitmap &bmp);
+	bool	is_file_bitmap(bitmap &img, const std::string &file);
+	int		read_data(std::ifstream &file, rgba **data, bitmap &img);
+	int		draw_point(rgba **data, int x, int y, pixel_color color);
+	void	display(rgba **data);
+	void	print_header();
+
+private:
+	std::string		file_path;
+	std::ifstream	file;
+	bitmap_header	header;
+
+	/* Most useful and oft-used header fields */
+	int32_t	width;
+	int32_t	height;
+
+	bool	is_file_bitmap(bitmap &img, const std::string &file);
+};
+
 
 #endif
