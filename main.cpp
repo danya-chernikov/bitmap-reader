@@ -11,11 +11,14 @@ int main()
 {
 	std::string	src_img_path;
 	std::cout << "Enter input BMP file path: ";
-	std::getline(std::cin, src_img_path);
+	std::getline (std::cin, src_img_path);
 
 	try
 	{
-		Bitmap	image(src_img_path);
+		Bitmap	image (src_img_path);
+		image.print_header();
+		image.display();
+		/* Draw a point */
 	}
 	catch (const std::runtime_error &err)
 	{
@@ -32,30 +35,5 @@ int main()
 		std::cerr << "Unkown error occured" << std::endl;
 		exit (1);
 	}
-
-	image.print_header();
-
-	rgba **data = new rgba*[height];
-	for (int32_t i = 0; i < height; ++i)
-		data[i] = new rgba[width];
-
-	/* Read bitmap data */
-	int	res = read_data(src_file, data, image);
-	if (res == 1)
-	{
-		std::cerr << "Bitmaps of this bit depth are not supported\n";
-		exit(3);
-	}
-	else if (res == 2)
-	{
-		std::cerr << "Unable to read from the source image file\n";
-		exit(2);
-	}
-
-
-	image.display();
-
-	/* Draw a point */
-
 	return 0;
 }

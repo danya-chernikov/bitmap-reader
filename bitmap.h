@@ -1,7 +1,8 @@
 #ifndef BITMAP_H
 #define BITMAP_H
 
-#include <iostream>
+#include <vector>
+
 #include <cstdint>
 
 /* Structures definitions */
@@ -51,6 +52,12 @@ struct	rgba
 };
 #pragma pack(pop)
 
+struct	point
+{
+	int32_t	x;
+	int32_t	y;
+};
+
 enum class pixel_color
 {
 	BLACK, WHITE
@@ -62,30 +69,39 @@ constexpr int16_t	BM_SIGNATURE = 0x4d42;
 constexpr int32_t	MAX_WIDTH = 1000;
 constexpr int32_t	MAX_HEIGHT = 1000;
 
+constexpr const char *OPEN_FILE_ERR = "Unable to open the source image file";
+constexpr const char *READ_FILE_ERR = "Unable to read from the source image file";
+constexpr const char *FORMAT_BMP_ERR = "It does not seem like this file is in BMP format";
+constexpr const char *DIMENSIONS_BMP_ERR = "The image is way too big";
+constexpr const char *DEPTH_BMP_ERR = "Bitmaps of this bit depth are not supported";
+
 
 /* Bitmap class */
 class Bitmap
 {
 public:
-	Bitmap();
+	Bitmap (const std::string &file_path);
 	~Bitmap();
 
-	bool	is_file_bitmap(bitmap &img, const std::string &file);
-	int		read_data(std::ifstream &file, rgba **data, bitmap &img);
-	int		draw_point(rgba **data, int x, int y, pixel_color color);
-	void	display(rgba **data);
+	void	display();
 	void	print_header();
+	int		draw_point(point p, pixel_color color);
 
 private:
+	/* Varialbe-members */
 	std::string		file_path;
 	std::ifstream	file;
 	bitmap_header	header;
+
+	std::vector <std::vector<rgba> > data; 
 
 	/* Most useful and oft-used header fields */
 	int32_t	width;
 	int32_t	height;
 
-	bool	is_file_bitmap(bitmap &img, const std::string &file);
+	/* Functions-members */
+	int		read_data();
+	bool	is_file_bitmap();
 };
 
 

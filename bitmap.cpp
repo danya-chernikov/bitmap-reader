@@ -1,56 +1,53 @@
-#include "bitmap.h"
-
+#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <filesystem>
 
-Bitmap::Bitmap (std::string img_path)
+#include "bitmap.h"
+
+Bitmap::Bitmap (const std::string &file_path)
 {
-	this->img_path = img_path;
+	this->file_path = file_path;
 
 	/* Trying to open the file provided */
-	file.open (img_path, std::ios::in | std::ios::binary);
+	file.open (file_path, std::ios::in | std::ios::binary);
 	if (!file.is_open() || file.fail())
-	{
-		throw std::runtime_error ("Unable to open the source image file");
-	}
+		throw std::runtime_error (OPEN_FILE_ERR);
 
 	/* Read the bitmap headers first */
 	file.read (reinterpret_cast<char *>(&header), sizeof (header));
 	if (file.fail())
-	{
-		throw std::runtime_error ("Unable to read from the source image file");
-	}
+		throw std::runtime_error (READ_FILE_ERR);
 
 	/* Determine if the bitmap image has the correct structure */
-	if (!is_file_bitmap (header, img_path))
-	{
-		throw std::runtime_error ("It does not seem like this file is in BMP format");
-	}
+	if (!is_file_bitmap ())
+		throw std::runtime_error (FORMAT_BMP_ERR);
 
-	width = image.info_header.width;
-	height = image.info_header.height;
+	width = header.info.width;
+	height = header.info.height;
 
 	if (width > MAX_WIDTH || height > MAX_HEIGHT)
-	{
-		throw std::runtime_error ("The image is way too big");
-	}
+		throw std::runtime_error (DIMENSIONS_BMP_ERR);
+
+	data = std::vector<std::vector<rgba> > (height, std::vector<rgba>(width));
+
+	/* Read bitmap data */
+	int	res = read_data();
+	if (res == 1)
+		throw std::runtime_error (DEPTH_BMP_ERR);
+	else if (res == 2)
+		throw std::runtime_error (READ_FILE_ERR);
 }
 
 Bitmap::~Bitmap()
 {
-	for (int32_t i = 0; i < height; ++i)
-		delete [] data [i];
-	delete [] data;
-
 	file.close();
 }
 
 void Bitmap::display()
 {
-
 	/* Display the read image */
-	std::cout << std::endl;
+	std::cout << '\n';
 	for (int32_t i = height - 1; i >= 0; --i)
 	{
 		for (int32_t q = 0; q < width; ++q)
@@ -60,34 +57,47 @@ void Bitmap::display()
 			else
 				std::cout << 'o';
 		}
-		std::cout << std::endl;
+		std::cout << '\n';
 	}
-	std::cout << std::endl;
+	std::cout << '\n';
 }
 
-/* Performs minimal checking to ensure that the bitmap file structure is correct */
-bool Bitmap::is_file_bitmap(bitmap &img, const std::string &file)
+void Bitmap::print_header()
 {
-	const std::filesystem::path	path = file;
+	std::cout << '\n';
+	std::cout << "Signature:\t\t"			<< std::hex << header.file.signature		<< '\n';
+	std::cout << "File size:\t\t"			<< std::hex << header.file.file_size		<< '\n';
+	std::cout << "Reserved 1:\t\t"			<< std::hex << header.file.reserved1		<< '\n';
+	std::cout << "Reserved 2:\t\t"			<< std::hex << header.file.reserved2		<< '\n';
+	std::cout << "Data offset:\t\t"			<< std::hex << header.file.data_offset		<< '\n';
+	std::cout << "Size:\t\t\t"				<< std::hex << header.info.size				<< '\n';
+	std::cout << "Width:\t\t\t"				<< std::hex << header.info.width			<< '\n';
+	std::cout << "Height:\t\t\t"			<< std::hex << header.info.height			<< '\n';
+	std::cout << "Planes:\t\t\t"			<< std::hex << header.info.planes			<< '\n';
+	std::cout << "Bits per pixel:\t\t"		<< std::hex << header.info.bits_per_pix		<< '\n';
+	std::cout << "Compression:\t\t"			<< std::hex << header.info.compression		<< '\n';
+	std::cout << "Image size:\t\t"			<< std::hex << header.info.img_size			<< '\n';
+	std::cout << "X pixels per meter:\t"	<< std::hex << header.info.x_pix_per_mtr	<< '\n';
+	std::cout << "Y pixels per meter:\t"	<< std::hex << header.info.y_pix_per_mtr	<< '\n';
+	std::cout << "Colors used:\t\t"			<< std::hex << header.info.colors_used		<< '\n';
+	std::cout << "Important colors:\t"		<< std::hex << header.info.important_colors	<< '\n';
+	std::cout << '\n';
+}
 
-	// The file size in the header does not match the actual file size
-	if (static_cast<uintmax_t>(img.file_header.file_size) != std::filesystem::file_size(path))
-		return false;
+/* Coordinates are measured from the bottom-left corner of
+ * the image (based on its normal, unflipped orientation, as
+ * displayed in standard image viewers by default) */
+int	Bitmap::draw_point(point p, pixel_color color)
+{
 
-	// The bitmap signature in the header is incorrect
-	if (img.file_header.signature != BM_SIGNATURE)
-		return false;
-
-	return true;
+	return 1;
 }
 
 /* On success returns 0 */
-int read_data(std::ifstream &file, rgba **data, bitmap &img)
+int Bitmap::read_data()
 {	
-	int32_t	width = img.info_header.width;
-	int32_t	height = img.info_header.height;
-	int32_t	data_offset = img.file_header.data_offset;
-	int16_t	bits_per_pix = img.info_header.bits_per_pix;
+	int32_t	data_offset = header.file.data_offset;
+	int16_t	bits_per_pix = header.info.bits_per_pix;
 	int32_t	bytes_read = 0;
 
 	char stuffer[3]; // To store possible padding bytes
@@ -135,33 +145,22 @@ int read_data(std::ifstream &file, rgba **data, bitmap &img)
 	return 0;
 }
 
-/* Coordinates are measured from the bottom-left corner of
- * the image (based on its normal, unflipped orientation, as
- * displayed in standard image viewers by default) */
-int	draw_point(rgba **data, int x, int y, pixel_color color)
+/* Performs minimal checking to
+ * ensure that the bitmap file
+ * structure is correct */
+bool Bitmap::is_file_bitmap()
 {
+	const std::filesystem::path	path = file_path;
 
-	return 1;
-}
+	// The file size in the header does not match
+	// the actual file size
+	if (static_cast<uintmax_t>(header.file.file_size) !=
+			std::filesystem::file_size(path))
+		return false;
 
-void Bitmap::print_header()
-{
-	std::cout << std::endl;
-	std::cout << "Signature:\t\t"			<< std::hex << header.file.signature		<< std::endl;
-	std::cout << "File size:\t\t"			<< std::hex << header.file.file_size		<< std::endl;
-	std::cout << "Reserved 1:\t\t"			<< std::hex << header.file.reserved1		<< std::endl;
-	std::cout << "Reserved 2:\t\t"			<< std::hex << header.file.reserved2		<< std::endl;
-	std::cout << "Data offset:\t\t"			<< std::hex << header.file.data_offset		<< std::endl;
-	std::cout << "Size:\t\t\t"				<< std::hex << header.info.size				<< std::endl;
-	std::cout << "Width:\t\t\t"				<< std::hex << header.info.width			<< std::endl;
-	std::cout << "Height:\t\t\t"			<< std::hex << header.info.height			<< std::endl;
-	std::cout << "Planes:\t\t\t"			<< std::hex << header.info.planes			<< std::endl;
-	std::cout << "Bits per pixel:\t\t"		<< std::hex << header.info.bits_per_pix		<< std::endl;
-	std::cout << "Compression:\t\t"			<< std::hex << header.info.compression		<< std::endl;
-	std::cout << "Image size:\t\t"			<< std::hex << header.info.img_size			<< std::endl;
-	std::cout << "X pixels per meter:\t"	<< std::hex << header.info.x_pix_per_mtr	<< std::endl;
-	std::cout << "Y pixels per meter:\t"	<< std::hex << header.info.y_pix_per_mtr	<< std::endl;
-	std::cout << "Colors used:\t\t"			<< std::hex << header.info.colors_used		<< std::endl;
-	std::cout << "Important colors:\t"		<< std::hex << header.info.important_colors	<< std::endl;
-	std::cout << std::endl;
+	// The bitmap signature in the header is incorrect
+	if (header.file.signature != BM_SIGNATURE)
+		return false;
+
+	return true;
 }
