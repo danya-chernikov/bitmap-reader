@@ -60,6 +60,20 @@ void Bitmap::display()
 		std::cout << '\n';
 	}
 	std::cout << '\n';
+
+	std::cout << '\n';
+	for (int32_t i = 0; i < height; ++i)
+	{
+		for (int32_t q = 0; q < width; ++q)
+		{
+			if (!data[i][q].blue && !data[i][q].green && !data[i][q].red)
+				std::cout << "\033[32m" << 'x' <<"\033[0m";
+			else
+				std::cout << 'o';
+		}
+		std::cout << '\n';
+	}
+	std::cout << '\n';
 }
 
 void Bitmap::print_header()
@@ -89,7 +103,39 @@ void Bitmap::print_header()
  * displayed in standard image viewers by default) */
 int	Bitmap::draw_point(point p, pixel_color color)
 {
+	if (p.x < 0 || p.x > width - 1 || p.y < 0 || p.y > height - 1)
+		return 0;
+	if (color == pixel_color::WHITE)
+	{
+		data[p.y][p.x].blue = 255;
+		data[p.y][p.x].green = 255;
+		data[p.y][p.x].red = 255;
+	}
+	else if (color == pixel_color::BLACK)
+	{
+		data[p.y][p.x].blue = 0;
+		data[p.y][p.x].green = 0;
+		data[p.y][p.x].red = 0;
+	}
+	else
+		return 0;
+	return 1;
+}
 
+int	Bitmap::draw_line(point p1, point p2, pixel_color color)
+{
+	if (p1.x < 0 || p1.x > width - 1 || p1.y < 0 || p1.y > height - 1)
+		return 0;
+	if (p2.x < 0 || p2.x > width - 1 || p2.y < 0 || p2.y > height - 1)
+		return 0;
+	if (color == pixel_color::WHITE)
+	{
+
+	}
+	else if (color == pixel_color::BLACK)
+	{
+
+	}
 	return 1;
 }
 

@@ -16,23 +16,29 @@ int main()
 	try
 	{
 		Bitmap	image (src_img_path);
+
+		/* Draw a point */
+		image.draw_point((point){0,0}, pixel_color::BLACK);
+		image.draw_point((point){0,1}, pixel_color::BLACK);
+		image.draw_point((point){0,2}, pixel_color::BLACK);
+
 		image.print_header();
 		image.display();
-		/* Draw a point */
+
 	}
 	catch (const std::runtime_error &err)
 	{
-		std::cerr << "Bitmap error: " << err.what() << std::endl;
+		std::cerr << "Error: " << err.what() << '\n';
 		exit (1);
 	}
-	catch (const std::exception &err)
+	catch (const char *err)
 	{
-		std::cerr << "General error: " << err.what() << std::endl;
-		exit(1);
+		std::cerr << "Eitmap error: " << err << '\n';
+		exit (1);
 	}
 	catch (...)
 	{
-		std::cerr << "Unkown error occured" << std::endl;
+		std::cerr << "Unkown error occured" << '\n';
 		exit (1);
 	}
 	return 0;

@@ -86,6 +86,7 @@ public:
 	void	display();
 	void	print_header();
 	int		draw_point(point p, pixel_color color);
+	int		draw_line(point p1, point p2, pixel_color color);
 
 private:
 	/* Varialbe-members */
