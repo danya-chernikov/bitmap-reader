@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <algorithm>
 
 #include "bitmap.h"
 
@@ -46,11 +47,13 @@ Bitmap::~Bitmap()
 
 void Bitmap::display()
 {
+	std::cout << "width: " << width << '\n' << "height: " << height << '\n';
+
 	/* Display the read image */
 	std::cout << '\n';
-	for (int32_t i = height - 1; i >= 0; --i)
+	for (uint32_t i = height - 1; i >= 0; --i)
 	{
-		for (int32_t q = 0; q < width; ++q)
+		for (uint32_t q = 0; q < width; ++q)
 		{
 			if (!data[i][q].blue && !data[i][q].green && !data[i][q].red)
 				std::cout << "\033[32m" << 'x' <<"\033[0m";
@@ -62,9 +65,9 @@ void Bitmap::display()
 	std::cout << '\n';
 
 	std::cout << '\n';
-	for (int32_t i = 0; i < height; ++i)
+	for (uint32_t i = 0; i < height; ++i)
 	{
-		for (int32_t q = 0; q < width; ++q)
+		for (uint32_t q = 0; q < width; ++q)
 		{
 			if (!data[i][q].blue && !data[i][q].green && !data[i][q].red)
 				std::cout << "\033[32m" << 'x' <<"\033[0m";
@@ -78,24 +81,24 @@ void Bitmap::display()
 
 void Bitmap::print_header()
 {
-	std::cout << '\n';
-	std::cout << "Signature:\t\t"			<< std::hex << header.file.signature		<< '\n';
-	std::cout << "File size:\t\t"			<< std::hex << header.file.file_size		<< '\n';
-	std::cout << "Reserved 1:\t\t"			<< std::hex << header.file.reserved1		<< '\n';
-	std::cout << "Reserved 2:\t\t"			<< std::hex << header.file.reserved2		<< '\n';
-	std::cout << "Data offset:\t\t"			<< std::hex << header.file.data_offset		<< '\n';
-	std::cout << "Size:\t\t\t"				<< std::hex << header.info.size				<< '\n';
-	std::cout << "Width:\t\t\t"				<< std::hex << header.info.width			<< '\n';
-	std::cout << "Height:\t\t\t"			<< std::hex << header.info.height			<< '\n';
-	std::cout << "Planes:\t\t\t"			<< std::hex << header.info.planes			<< '\n';
-	std::cout << "Bits per pixel:\t\t"		<< std::hex << header.info.bits_per_pix		<< '\n';
-	std::cout << "Compression:\t\t"			<< std::hex << header.info.compression		<< '\n';
-	std::cout << "Image size:\t\t"			<< std::hex << header.info.img_size			<< '\n';
-	std::cout << "X pixels per meter:\t"	<< std::hex << header.info.x_pix_per_mtr	<< '\n';
-	std::cout << "Y pixels per meter:\t"	<< std::hex << header.info.y_pix_per_mtr	<< '\n';
-	std::cout << "Colors used:\t\t"			<< std::hex << header.info.colors_used		<< '\n';
-	std::cout << "Important colors:\t"		<< std::hex << header.info.important_colors	<< '\n';
-	std::cout << '\n';
+	std::cout << '\n' << std::hex;
+	std::cout << "Signature:\t\t"			<<  header.file.signature		<< '\n';
+	std::cout << "File size:\t\t"			<<  header.file.file_size		<< '\n';
+	std::cout << "Reserved 1:\t\t"			<<  header.file.reserved1		<< '\n';
+	std::cout << "Reserved 2:\t\t"			<<  header.file.reserved2		<< '\n';
+	std::cout << "Data offset:\t\t"			<<  header.file.data_offset		<< '\n';
+	std::cout << "Size:\t\t\t"				<<  header.info.size			<< '\n';
+	std::cout << "Width:\t\t\t"				<<  header.info.width			<< '\n';
+	std::cout << "Height:\t\t\t"			<<  header.info.height			<< '\n';
+	std::cout << "Planes:\t\t\t"			<<  header.info.planes			<< '\n';
+	std::cout << "Bits per pixel:\t\t"		<<  header.info.bits_per_pix	<< '\n';
+	std::cout << "Compression:\t\t"			<<  header.info.compression		<< '\n';
+	std::cout << "Image size:\t\t"			<<  header.info.img_size		<< '\n';
+	std::cout << "X pixels per meter:\t"	<<  header.info.x_pix_per_mtr	<< '\n';
+	std::cout << "Y pixels per meter:\t"	<<  header.info.y_pix_per_mtr	<< '\n';
+	std::cout << "Colors used:\t\t"			<<  header.info.colors_used		<< '\n';
+	std::cout << "Important colors:\t"		<<  header.info.important_colors<< '\n';
+	std::cout << '\n' << std::dec;
 }
 
 /* Coordinates are measured from the bottom-left corner of
@@ -105,51 +108,68 @@ int	Bitmap::draw_point(point p, pixel_color color)
 {
 	if (p.x < 0 || p.x > width - 1 || p.y < 0 || p.y > height - 1)
 		return 0;
-	if (color == pixel_color::WHITE)
-	{
-		data[p.y][p.x].blue = 255;
-		data[p.y][p.x].green = 255;
-		data[p.y][p.x].red = 255;
-	}
-	else if (color == pixel_color::BLACK)
-	{
-		data[p.y][p.x].blue = 0;
-		data[p.y][p.x].green = 0;
-		data[p.y][p.x].red = 0;
-	}
-	else
-		return 0;
+
+	data[p.y][p.x].blue = static_cast<uint8_t>(color);
+	data[p.y][p.x].green = static_cast<uint8_t>(color);
+	data[p.y][p.x].red = static_cast<uint8_t>(color);
+
 	return 1;
 }
 
+/* Having two points P1(x1; y1) and P2(x2; y2)
+ * the equation of straight line with these points is:
+ * (y - y1)/(y2 - y1) = (x - x1)/(x2 - x1)
+ * Let's derive the y
+ * (y - y1)(x2 - x1) = (y2 - y1)(x - x1)
+ * y = ( y2(x - x1) -y1(x - x1) + y1(x2 - x1) )/(x2 - x1)
+ * y = (y2 - y1)(x - x1)/(x2 - x1) + y1
+ * */
 int	Bitmap::draw_line(point p1, point p2, pixel_color color)
 {
 	if (p1.x < 0 || p1.x > width - 1 || p1.y < 0 || p1.y > height - 1)
 		return 0;
 	if (p2.x < 0 || p2.x > width - 1 || p2.y < 0 || p2.y > height - 1)
 		return 0;
-	if (color == pixel_color::WHITE)
-	{
 
-	}
-	else if (color == pixel_color::BLACK)
+	if (p1.x == p2.x)
 	{
+		/* Determine mutual positioning of the points on the ordinate */
+		uint32_t lpy = std::min(p1.y, p2.y); // lower point
+		uint32_t upy = std::max(p1.y, p2.y); // upper point
 
+		for (uint32_t y = lpy; y < upy; ++y)
+		{
+			draw_point((point){p1.x, y}, color);
+		}
 	}
+	else
+	{
+		/* Determine mutual positioning of the points on the absiss */
+		uint32_t lpx = std::min(p1.x, p2.x); // left point
+		uint32_t rpx = std::max(p1.x, p2.x); // right point
+
+		for (uint32_t x = lpx; x <= rpx; ++x)
+		{
+			double slope = static_cast<double>(p2.y - p1.y) / (p2.x - p1.x);
+			uint32_t y = static_cast<uint32_t>(slope * (x - p1.x) + p1.y);
+			draw_point((point){x, y}, color);
+		}
+	}
+
 	return 1;
 }
 
 /* On success returns 0 */
 int Bitmap::read_data()
 {	
-	int32_t	data_offset = header.file.data_offset;
-	int16_t	bits_per_pix = header.info.bits_per_pix;
-	int32_t	bytes_read = 0;
+	uint32_t	data_offset = header.file.data_offset;
+	uint16_t	bits_per_pix = header.info.bits_per_pix;
+	uint32_t	bytes_read = 0;
 
 	char stuffer[3]; // To store possible padding bytes
 
 	// How many bytes to skip in the end of each row
-	int32_t	bytes_to_skip = 0; // by default skipping 0 bytes
+	uint32_t	bytes_to_skip = 0; // by default skipping 0 bytes
 
 	// How many bytes will read each read() call
 	size_t	bytes_to_read;
@@ -173,9 +193,9 @@ int Bitmap::read_data()
 
 	/* Let's read file data raw by raw */
 	file.seekg(data_offset);
-	for (int32_t i = 0; i < height; ++i)
+	for (uint32_t i = 0; i < height; ++i)
 	{
-		for (int32_t q = 0; q < width && !file.eof(); ++q)
+		for (uint32_t q = 0; q < width && !file.eof(); ++q)
 		{
 			file.read(reinterpret_cast<char *>(&data[i][q]), bytes_to_read);
 			/*if (file.fail())
