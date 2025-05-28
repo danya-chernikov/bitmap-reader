@@ -5,6 +5,8 @@
 
 #include <cstdint>
 
+using u_char = unsigned char;
+
 /* Structures definitions */
 #pragma pack(push, 1)
 struct	file_header
@@ -63,17 +65,18 @@ enum class pixel_color : uint8_t
 	BLACK=0, WHITE=255
 };
 
-
 /* Constants definitions */
 constexpr uint16_t	BM_SIGNATURE = 0x4d42;
+constexpr uint32_t	FILE_HEADER_SIZE = 14;
+constexpr uint32_t	INFO_HEADER_SIZE = 40;
 constexpr uint32_t	MAX_WIDTH = 1000;
 constexpr uint32_t	MAX_HEIGHT = 1000;
 
 constexpr const char *OPEN_FILE_ERR = "Unable to open the source image file";
 constexpr const char *READ_FILE_ERR = "Unable to read from the source image file";
+constexpr const char *WRITE_FILE_ERR = "Unable to write into the file";
 constexpr const char *FORMAT_BMP_ERR = "It does not seem like this file is in BMP format";
 constexpr const char *DIMENSIONS_BMP_ERR = "The image is way too big";
-constexpr const char *DEPTH_BMP_ERR = "Bitmaps of this bit depth are not supported";
 
 
 /* Bitmap class */
@@ -87,6 +90,7 @@ public:
 	void	print_header();
 	int		draw_point(point p, pixel_color color);
 	int		draw_line(point p1, point p2, pixel_color color);
+	int		save_as(const std::string &file_path);
 
 private:
 	/* Varialbe-members */
@@ -94,7 +98,14 @@ private:
 	std::ifstream	file;
 	bitmap_header	header;
 
-	std::vector <std::vector<rgba> > data; 
+	std::vector <std::vector<rgba> > data;
+
+	std::vector <uint8_t> color_table;
+
+	size_t		color_table_size;
+	size_t		data_size;
+	uint32_t	bits_per_pix;
+	uint32_t	bytes_to_skip; // How many bytes to skip in the end of each row
 
 	/* Most useful and oft-used header fields */
 	uint32_t	width;
@@ -105,5 +116,6 @@ private:
 	bool	is_file_bitmap();
 };
 
+void print_bytes_hex(unsigned char *data, size_t size);
 
 #endif

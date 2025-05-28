@@ -8,6 +8,9 @@
 
 Bitmap::Bitmap (const std::string &file_path)
 {
+	std::cout << "Size of info header: " << sizeof (info_header) << std::endl;
+
+	bytes_to_skip = 0;
 	this->file_path = file_path;
 
 	/* Trying to open the file provided */
@@ -24,20 +27,28 @@ Bitmap::Bitmap (const std::string &file_path)
 	if (!is_file_bitmap ())
 		throw std::runtime_error (FORMAT_BMP_ERR);
 
+	/* Let's duplicate the most frequently used variables */
 	width = header.info.width;
 	height = header.info.height;
+	bits_per_pix = header.info.bits_per_pix;
 
 	if (width > MAX_WIDTH || height > MAX_HEIGHT)
 		throw std::runtime_error (DIMENSIONS_BMP_ERR);
 
+	/* Initialize the color's table vector */
+	color_table_size = header.file.data_offset - FILE_HEADER_SIZE - INFO_HEADER_SIZE;
+	color_table = std::vector<uint8_t>(color_table_size);
+
+	/* Read color table */
+	file.read(reinterpret_cast<char *>(color_table.data()), color_table_size);
+
+	/* Initialize the vector of pixel data */
 	data = std::vector<std::vector<rgba> > (height, std::vector<rgba>(width));
 
-	/* Read bitmap data */
-	int	res = read_data();
-	if (res == 1)
-		throw std::runtime_error (DEPTH_BMP_ERR);
-	else if (res == 2)
-		throw std::runtime_error (READ_FILE_ERR);
+	/* Read bitmap pixel data */
+	data_size = read_data();
+	if (!data_size)
+		throw std::runtime_error (FORMAT_BMP_ERR);
 }
 
 Bitmap::~Bitmap()
@@ -47,27 +58,11 @@ Bitmap::~Bitmap()
 
 void Bitmap::display()
 {
-	std::cout << "width: " << width << '\n' << "height: " << height << '\n';
-
 	/* Display the read image */
 	std::cout << '\n';
 	for (int32_t i = static_cast<int32_t>(height) - 1; i >= 0; --i)
 	{
 		for (int32_t q = 0; q < static_cast<int32_t>(width); ++q)
-		{
-			if (!data[i][q].blue && !data[i][q].green && !data[i][q].red)
-				std::cout << "\033[32m" << 'x' <<"\033[0m";
-			else
-				std::cout << 'o';
-		}
-		std::cout << '\n';
-	}
-	std::cout << '\n';
-
-	std::cout << '\n';
-	for (uint32_t i = 0; i < height; ++i)
-	{
-		for (uint32_t q = 0; q < width; ++q)
 		{
 			if (!data[i][q].blue && !data[i][q].green && !data[i][q].red)
 				std::cout << "\033[32m" << 'x' <<"\033[0m";
@@ -133,18 +128,16 @@ int	Bitmap::draw_line(point p1, point p2, pixel_color color)
 
 	if (p1.x == p2.x)
 	{
-		/* Determine mutual positioning of the points on the ordinate */
+		/* Determine the relative positions of the points on the ordinate */
 		uint32_t lpy = std::min(p1.y, p2.y); // lower point
 		uint32_t upy = std::max(p1.y, p2.y); // upper point
 
 		for (uint32_t y = lpy; y < upy; ++y)
-		{
 			draw_point((point){p1.x, y}, color);
-		}
 	}
 	else
 	{
-		/* Determine mutual positioning of the points on the absiss */
+		/* Determine the relative positions of the points on the abscissa */
 		uint32_t lpx = std::min(p1.x, p2.x); // left point
 		uint32_t rpx = std::max(p1.x, p2.x); // right point
 
@@ -159,28 +152,53 @@ int	Bitmap::draw_line(point p1, point p2, pixel_color color)
 	return 1;
 }
 
-/* On success returns 0 */
+int	Bitmap::save_as(const std::string &file_path)
+{	
+	u_char	stuffer[3] = {0, 0, 0};
+
+	std::ofstream file(file_path, std::ios::out | std::ios::binary);
+	if (!file.is_open() || file.fail())
+		throw std::runtime_error (OPEN_FILE_ERR);
+
+	std::streampos before = file.tellp();
+	std::streampos after;
+
+	file.write(reinterpret_cast<char *>(&header), sizeof (header));
+	after = file.tellp();
+	std::cout << after - before << std::endl;
+
+	file.write(reinterpret_cast<char *>(&color_table), color_table_size);
+	after = file.tellp();
+	std::cout << after - before << std::endl;
+
+	size_t	bytes_to_write = bits_per_pix / 8;
+
+	for (uint32_t raw_ind = 0; raw_ind < height; ++raw_ind)
+	{
+		for (uint32_t p_ind = 0; p_ind < width; ++p_ind)
+		{
+			file.write(reinterpret_cast<char *>(&data[raw_ind][p_ind]), bytes_to_write);
+			if (bytes_to_skip)
+				file.write(reinterpret_cast<char *>(&stuffer), bytes_to_skip);
+			/*if (file.bad() || file.fail())
+				throw std::runtime_error(WRITE_FILE_ERR);*/
+		}
+	}
+	std::cout << after - before << std::endl;
+
+	return 1;
+}
+
+/* Returns the total number of
+ * pixel data bytes read from
+ * the file, or 0 on error */
 int Bitmap::read_data()
 {	
 	uint32_t	data_offset = header.file.data_offset;
-	uint16_t	bits_per_pix = header.info.bits_per_pix;
-	uint32_t	bytes_read = 0;
+	size_t		bytes_read = 0;
+	u_char		stuffer[3]; // To store possible padding bytes
 
-	char stuffer[3]; // To store possible padding bytes
-
-	// How many bytes to skip in the end of each row
-	uint32_t	bytes_to_skip = 0; // by default skipping 0 bytes
-
-	// How many bytes will read each read() call
-	size_t	bytes_to_read;
-
-	// Bitmaps of this bit depth are not supported
-	if (bits_per_pix != 0x18 && bits_per_pix != 0x20)
-		return 1; // error
-
-	bytes_to_read = bits_per_pix / 8;
-
-	std::cout << "Bytes to read: " << bytes_to_read << std::endl;
+	size_t		bytes_to_read = bits_per_pix / 8; // How many bytes will read each read() call
 
 	// If there are some padding bytes
 	if ((width * bytes_to_read) % 4 != 0)
@@ -189,29 +207,22 @@ int Bitmap::read_data()
 		bytes_to_skip = 4 - ((width * bytes_to_read) % 4);
 	}
 
-	std::cout << "Bytes to skip: " << bytes_to_skip << std::endl;
-
 	/* Let's read file data raw by raw */
 	file.seekg(data_offset);
-	uint32_t i, q;
-	for (i = 0; i < height; ++i)
+	for (uint32_t i = 0; i < height; ++i)
 	{
-		for (q = 0; q < width && !file.eof(); ++q)
+		for (uint32_t q = 0; q < width && !file.eof(); ++q)
 		{
 			file.read(reinterpret_cast<char *>(&data[i][q]), bytes_to_read);
-			/*if (file.fail())
-				return 2; // error */
+			if (file.fail() || file.bad())
+				return 0;
 			bytes_read += file.gcount();
 		}
 		if (bytes_to_skip)
-			file.read(&stuffer[0], bytes_to_skip);
-		std::cout << "Columns read: " << q << std::endl;
+			file.read(reinterpret_cast<char *>(&stuffer), bytes_to_skip);
 	}
-	std::cout << "Rows read: " << i << std::endl;
 
-	std::cout << "Bytes read: " << bytes_read << std::endl;
-
-	return 0;
+	return (bytes_read);
 }
 
 /* Performs minimal checking to
@@ -231,5 +242,19 @@ bool Bitmap::is_file_bitmap()
 	if (header.file.signature != BM_SIGNATURE)
 		return false;
 
+	// Bitmaps of this bit depth are not supported
+	if (header.info.bits_per_pix != 24 && header.info.bits_per_pix != 32)
+		return false; // error
+
 	return true;
+}
+
+void print_bytes_hex(unsigned char *data, size_t size)
+{
+	std::cout << '\n';
+	for (size_t i = 0; i < size; ++i)
+	{
+		std::cout << std::uppercase << std::hex << (int)data[i] << " ";
+	}
+	std::cout << '\n';
 }
