@@ -51,9 +51,9 @@ void Bitmap::display()
 
 	/* Display the read image */
 	std::cout << '\n';
-	for (uint32_t i = height - 1; i >= 0; --i)
+	for (int32_t i = static_cast<int32_t>(height) - 1; i >= 0; --i)
 	{
-		for (uint32_t q = 0; q < width; ++q)
+		for (int32_t q = 0; q < static_cast<int32_t>(width); ++q)
 		{
 			if (!data[i][q].blue && !data[i][q].green && !data[i][q].red)
 				std::cout << "\033[32m" << 'x' <<"\033[0m";
@@ -193,9 +193,10 @@ int Bitmap::read_data()
 
 	/* Let's read file data raw by raw */
 	file.seekg(data_offset);
-	for (uint32_t i = 0; i < height; ++i)
+	uint32_t i, q;
+	for (i = 0; i < height; ++i)
 	{
-		for (uint32_t q = 0; q < width && !file.eof(); ++q)
+		for (q = 0; q < width && !file.eof(); ++q)
 		{
 			file.read(reinterpret_cast<char *>(&data[i][q]), bytes_to_read);
 			/*if (file.fail())
@@ -204,7 +205,9 @@ int Bitmap::read_data()
 		}
 		if (bytes_to_skip)
 			file.read(&stuffer[0], bytes_to_skip);
+		std::cout << "Columns read: " << q << std::endl;
 	}
+	std::cout << "Rows read: " << i << std::endl;
 
 	std::cout << "Bytes read: " << bytes_read << std::endl;
 
