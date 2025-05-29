@@ -13,6 +13,24 @@
 
 #include "bitmap.h"
 
+/* Draws a square cross with its center at center and in the specified color */
+void draw_cross(Bitmap &img, point center, uint32_t side_len, pixel_color color)
+{
+	uint32_t x, y;
+	x = center.x;
+	y = center.y;
+
+	img.draw_line(
+			(point){x + side_len/2, y - side_len/2},
+			(point){x - side_len/2, y + side_len/2},		  
+				   color);
+	img.display();
+	img.draw_line((point){x - side_len/2, y - side_len/2},
+				  (point){x + side_len/2, y + side_len/2},
+				   color);
+
+}
+
 int main()
 {
 	try
@@ -25,19 +43,12 @@ int main()
 
 		image.display();
 
-		// Let's say the program draws a cross in the image's center
-		uint32_t	width, height;
-		point		p1, p2;
-
+		// Let's say the program draws a square-shaped
+		// cross at the center of the image
+		uint32_t width, height;
 		width = image.get_width();
 		height = image.get_height();
-
-		p1.x = width/2 - width/8;
-		p1.y = height/2 - height/10;
-		p2.x = width/2 + width/12;
-		p2.y = height/2 + height/12;
-
-		image.draw_line(p1, p2, pixel_color::BLACK);
+		draw_cross(image, (point){width/2, height/2}, 10, pixel_color::BLACK);
 
 		image.display();
 
