@@ -1,5 +1,5 @@
 CC=g++
-PROGNAME=bmpreader
+PROGNAME=bmpisha
 CPPFLAGS=-O0 -g3 -Wall --std=c++17
 
 OBJS=main.o bitmap.o
