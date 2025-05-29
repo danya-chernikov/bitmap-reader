@@ -20,15 +20,13 @@ void draw_cross(Bitmap &img, point center, uint32_t side_len, pixel_color color)
 	x = center.x;
 	y = center.y;
 
-	img.draw_line(
-			(point){x + side_len/2, y - side_len/2},
-			(point){x - side_len/2, y + side_len/2},		  
-				   color);
-	img.display();
-	img.draw_line((point){x - side_len/2, y - side_len/2},
-				  (point){x + side_len/2, y + side_len/2},
-				   color);
+	img.draw_line((point){x + side_len/2, y - side_len/2},
+                (point){x - side_len/2, y + side_len/2},		  
+				         color);
 
+	img.draw_line((point){x - side_len/2, y - side_len/2},
+				        (point){x + side_len/2, y + side_len/2},
+				         color);
 }
 
 int main()
