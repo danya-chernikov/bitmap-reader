@@ -152,26 +152,31 @@ bool Bitmap::draw_line(point p1, point p2, pixel_color color)
 	if (p2.x < 0 || p2.x > width - 1 || p2.y < 0 || p2.y > height - 1)
 		return false;
 
-	if (p1.x == p2.x)
-	{
-		// Determine the relative positions of the points on the ordinate
-		uint32_t lpy = std::min(p1.y, p2.y); // lower point
-		uint32_t upy = std::max(p1.y, p2.y); // upper point
+	int32_t x1 = p1.x, y1 = p1.y;
+	int32_t x2 = p2.x, y2 = p2.y;
 
-		for (uint32_t y = lpy; y < upy; ++y)
-			draw_point((point){p1.x, y}, color);
-	}
-	else
-	{
-		// Determine the relative positions of the points on the abscissa
-		uint32_t lpx = std::min(p1.x, p2.x); // left point
-		uint32_t rpx = std::max(p1.x, p2.x); // right point
+	int32_t dx = abs(x2 - x1), dy = -abs(y2 - y1);
+	int32_t sx = x1 < x2 ? 1 : -1;
+	int32_t sy = y1 < y2 ? 1 : -1;
+	int32_t err = dx + dy;
 
-		for (uint32_t x = lpx; x <= rpx; ++x)
+	while (true)
+	{
+		draw_point((point){static_cast<uint32_t>(x1), static_cast<uint32_t>(y1)}, color);
+
+		if (x1 == x2 && y1 == y2)
+			break;
+
+		int32_t e2 = 2 * err;
+		if (e2 >= dy)
 		{
-			double slope = static_cast<double>(p2.y - p1.y) / (p2.x - p1.x);
-			uint32_t y = static_cast<uint32_t>(slope * (x - p1.x) + p1.y);
-			draw_point((point){x, y}, color);
+			err += dy;
+			x1 += sx;
+		}
+		if (e2 <= dx)
+		{
+			err += dx;
+			y1 += sy;
 		}
 	}
 	return true;
