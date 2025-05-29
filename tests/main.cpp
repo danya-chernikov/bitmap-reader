@@ -17,7 +17,18 @@ int main()
 
 		Bitmap image (in_img_path);
 
+		image.print_header();
 
+		/* Draw a point */
+		/*image.draw_point((point){0,0}, pixel_color::BLACK);
+		image.draw_point((point){0,1}, pixel_color::BLACK);
+		image.draw_point((point){0,2}, pixel_color::BLACK);*/
+		/*image.draw_line((point){5,4}, (point){25,14}, pixel_color::BLACK);
+		image.draw_line((point){10,15}, (point){10,25}, pixel_color::BLACK);
+		image.draw_line((point){10,15}, (point){10,25}, pixel_color::BLACK);
+		image.draw_line((point){0,0}, (point){0,14}, pixel_color::BLACK);
+		image.draw_line((point){0,0}, (point){14,0}, pixel_color::BLACK);
+		image.draw_line((point){32,10}, (point){60,12}, pixel_color::BLACK);*/
 
 		image.display();
 

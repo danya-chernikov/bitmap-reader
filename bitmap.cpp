@@ -8,8 +8,6 @@
 
 Bitmap::Bitmap (const std::string &file_path)
 {
-	std::cout << "Size of info header: " << sizeof (info_header) << std::endl;
-
 	bytes_to_skip = 0;
 	this->file_path = file_path;
 
@@ -167,7 +165,7 @@ int	Bitmap::save_as(const std::string &file_path)
 	after = file.tellp();
 	std::cout << after - before << std::endl;
 
-	file.write(reinterpret_cast<char *>(&color_table), color_table_size);
+	file.write(reinterpret_cast<char *>(color_table.data()), color_table_size);
 	after = file.tellp();
 	std::cout << after - before << std::endl;
 
@@ -186,6 +184,7 @@ int	Bitmap::save_as(const std::string &file_path)
 	}
 	std::cout << after - before << std::endl;
 
+	file.close();
 	return 1;
 }
 
@@ -247,14 +246,4 @@ bool Bitmap::is_file_bitmap()
 		return false; // error
 
 	return true;
-}
-
-void print_bytes_hex(unsigned char *data, size_t size)
-{
-	std::cout << '\n';
-	for (size_t i = 0; i < size; ++i)
-	{
-		std::cout << std::uppercase << std::hex << (int)data[i] << " ";
-	}
-	std::cout << '\n';
 }

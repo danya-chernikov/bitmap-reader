@@ -116,6 +116,4 @@ private:
 	bool	is_file_bitmap();
 };
 
-void print_bytes_hex(unsigned char *data, size_t size);
-
 #endif
