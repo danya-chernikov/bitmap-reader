@@ -97,7 +97,7 @@ public:
 
 private:
 	/* Auxiliary member functions */
-	size_t			read_data();
+	size_t			read_pixel_data();
 	bool			is_file_bitmap();
 
 	/* Just member variables */
@@ -113,7 +113,7 @@ private:
 	uint32_t		bits_per_pix;
 
 	/* Containers to store bitmap's content */
-	std::vector <std::vector<rgba> >	data; // pixel color data
+	std::vector <std::vector<rgba> >	pixel_data; // pixel color data
 	std::vector <uint8_t>				color_table;
 };
 

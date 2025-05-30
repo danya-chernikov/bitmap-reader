@@ -41,10 +41,10 @@ Bitmap::Bitmap (const std::string &file_path)
 	file.read(reinterpret_cast<char *>(color_table.data()), color_table_size);
 
 	// Initialize the vector of pixel data
-	data = std::vector<std::vector<rgba> > (height, std::vector<rgba>(width));
+	pixel_data = std::vector<std::vector<rgba> > (height, std::vector<rgba>(width));
 
 	// Read bitmap pixel data
-	size_t data_size = read_data();
+	size_t data_size = read_pixel_data();
 	if (!data_size)
 		throw std::runtime_error (FORMAT_BMP_ERR);
 }
@@ -57,7 +57,7 @@ Bitmap::~Bitmap()
 /* Returns the total number of
  * pixel data bytes read from
  * the file, or 0 on error */
-size_t Bitmap::read_data()
+size_t Bitmap::read_pixel_data()
 {	
 	uint32_t	data_offset = header.file.data_offset;
 	size_t		bytes_read = 0;
@@ -78,7 +78,7 @@ size_t Bitmap::read_data()
 	{
 		for (uint32_t q = 0; q < width && !file.eof(); ++q)
 		{
-			file.read(reinterpret_cast<char *>(&data[i][q]), bytes_to_read);
+			file.read(reinterpret_cast<char *>(&pixel_data[i][q]), bytes_to_read);
 			if (file.fail() || file.bad())
 				return 0;
 			bytes_read += file.gcount();
@@ -125,9 +125,9 @@ bool Bitmap::draw_point(point p, pixel_color color)
 	if (p.x < 0 || p.x > width - 1 || p.y < 0 || p.y > height - 1)
 		return false;
 
-	data[p.y][p.x].blue = static_cast<uint8_t>(color);
-	data[p.y][p.x].green = static_cast<uint8_t>(color);
-	data[p.y][p.x].red = static_cast<uint8_t>(color);
+	pixel_data[p.y][p.x].blue = static_cast<uint8_t>(color);
+	pixel_data[p.y][p.x].green = static_cast<uint8_t>(color);
+	pixel_data[p.y][p.x].red = static_cast<uint8_t>(color);
 
 	return true;
 }
@@ -135,16 +135,7 @@ bool Bitmap::draw_point(point p, pixel_color color)
 /* Draws a line between two points, p1 and p2, using the
  * color selected by the caller. Returns 1 on success.
  * Returns 0 if the specified coordinates are out of the
- * image bounds.
- *
- * Having two points P1(x1; y1) and P2(x2; y2)
- * the equation of straight line with these
- * points is:
- * (y - y1)/(y2 - y1) = (x - x1)/(x2 - x1)
- *
- * Let's derive the y:
- * (y - y1)(x2 - x1) = (y2 - y1)(x - x1)
- * y = (y2 - y1)(x - x1)/(x2 - x1) + y1 */
+ * image bounds */
 bool Bitmap::draw_line(point p1, point p2, pixel_color color)
 {
 	if (p1.x < 0 || p1.x > width - 1 || p1.y < 0 || p1.y > height - 1)
@@ -204,7 +195,7 @@ void Bitmap::save_as(const std::string &file_path)
 	{
 		for (uint32_t p_ind = 0; p_ind < width; ++p_ind)
 		{
-			file.write(reinterpret_cast<char *>(&data[raw_ind][p_ind]), bytes_to_write);
+			file.write(reinterpret_cast<char *>(&pixel_data[raw_ind][p_ind]), bytes_to_write);
 			if (bytes_to_skip)
 				file.write(reinterpret_cast<char *>(&stuffer), bytes_to_skip);
 			if (file.bad() || file.fail())
@@ -225,7 +216,7 @@ void Bitmap::display()
 	{
 		for (int32_t q = 0; q < static_cast<int32_t>(width); ++q)
 		{
-			if (!data[i][q].blue && !data[i][q].green && !data[i][q].red)
+			if (!pixel_data[i][q].blue && !pixel_data[i][q].green && !pixel_data[i][q].red)
 				std::cout << "\033[32m" << 'x' <<"\033[0m";
 			else
 				std::cout << 'o';
